@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Amazon Device Control</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Amazon Device Control</h1>
+            <div class="header-controls">
+                <div class="panel-status-container">
+                    </div>
+                <div class="building-selector">
+                    <input type="text" class="building-search" placeholder="Search buildings..." />
+                    <button class="clear-filter" style="display:none;">&times;</button>
+                    <div class="building-dropdown"></div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <div id="loader" class="loader" style="display:none;">Loading...</div>
+            <div id="deviceList" class="buildings-container"></div>
+        </main>
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <div id="ignoreModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <div class="modal-controls">
+                 <input type="text" id="modalSearch" placeholder="Search proevents...">
+                 <button id="modalSelectAllBtn" class="bulk-btn">Select All</button>
+            </div>
+            <div id="modalItemList" class="modal-item-list"></div>
+            <div class="modal-actions">
+                <button id="modalConfirmBtn" class="bulk-btn">Confirm</button>
+                <button id="modalCancelBtn" class="bulk-btn bulk-disarm">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

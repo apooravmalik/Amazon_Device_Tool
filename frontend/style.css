@@ -1,0 +1,497 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f8fafc;
+    color: #334155;
+    margin: 0;
+    padding: 24px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    padding: 24px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin: 0;
+    color: #1e293b;
+}
+
+.header-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.building-selector {
+    position: relative;
+    min-width: 250px;
+}
+
+.building-search {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.building-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.building-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.building-option:hover {
+    background-color: #f8fafc;
+}
+
+.building-option:last-child {
+    border-bottom: none;
+}
+
+.clear-filter {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.building-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: #fff;
+    transition: box-shadow 0.2s ease;
+}
+
+.building-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.building-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.building-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.toggle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 28px;
+    color: #64748b;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.building-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.building-time-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.time-input {
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 80px;
+}
+
+.time-save-btn {
+    padding: 4px 8px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.time-save-btn:hover {
+    background: #2563eb;
+}
+
+.building-body {
+    padding: 16px;
+    background-color: #fdfdfe;
+}
+
+.building-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.device-search {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+.bulk-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.bulk-arm {
+    background: #22c55e;
+    color: white;
+}
+
+.bulk-disarm {
+    background: #ef4444;
+    color: white;
+}
+
+.bulk-btn:hover {
+    opacity: 0.8;
+}
+
+.bulk-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.devices-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.device-item:last-child {
+    border-bottom: none;
+}
+
+.device-item:hover {
+    background-color: #f8fafc;
+}
+
+.device-name {
+    font-weight: 500;
+    flex: 1;
+}
+
+.device-state-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: #9ca3af; /* Set a default color */
+}
+
+.ignore-alarm-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.state-unknown {
+    background-color: #f59e0b;
+}
+
+.building-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 12px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.status-all-armed {
+    background-color: #22c55e;
+}
+
+.status-partial-armed {
+    background-color: #f59e0b;
+}
+
+.status-none-armed {
+    background-color: #6b7280;
+}
+
+.notification {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1001;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+
+.notification.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.loader {
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+}
+
+.muted {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+#modalSearch {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+#modalSelectAllBtn {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #f8fafc;
+    font-weight: 500;
+}
+
+#modalSelectAllBtn:hover {
+    background-color: #f1f5f9;
+}
+
+.modal-item-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .header-controls {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .building-selector {
+        min-width: auto;
+    }
+
+    .building-header {
+        flex-wrap: wrap;
+    }
+
+    .building-time-control {
+        flex-wrap: wrap;
+        gap: 4px;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .building-controls {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+/* --- ADDED STYLES FOR PANEL STATUS TOGGLE --- */
+
+.panel-status-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+#panel-status-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #22c55e; /* Green for Armed */
+}
+
+input:not(:checked) + .slider {
+    background-color: #ef4444; /* Red for Disarmed */
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 28px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
