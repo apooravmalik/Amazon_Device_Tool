@@ -1,10 +1,10 @@
 import os
 import logging
+import urllib.parse
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from contextlib import contextmanager
-from urllib.parse import quote_plus
 
 # Load environment variables
 load_dotenv()
@@ -22,36 +22,58 @@ DB_SERVER = os.getenv("DB_SERVER", "10.192.0.173")
 DB_NAME = os.getenv("DB_NAME", "vtasdata_amazon")
 DB_USER = os.getenv("DB_USER", "sa")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "m00se_1234")
+DB_TRUST_CERT = os.getenv("DB_TRUST_CERT", "yes")
 
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", 8000))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # --- ProServer Configuration ---
-PROSERVER_IP = os.getenv("10.192.0.173")
-PROSERVER_PORT = os.getenv("7777") 
+PROSERVER_IP = os.getenv("PROSERVER_IP", "10.192.0.173")
+PROSERVER_PORT = int(os.getenv("PROSERVER_PORT", "7777"))
 
-# # URL-encode the driver string to handle spaces
-# encoded_driver = quote_plus(DB_DRIVER)
+# --- SQLAlchemy Connection String ---
+def create_connection_string():
+    """Create a properly formatted connection string for MS SQL Server using SQLAlchemy"""
+    # Build the ODBC connection string without quotes around the driver
+    odbc_str = (
+        f"DRIVER={DB_DRIVER};"
+        f"SERVER={DB_SERVER};"
+        f"DATABASE={DB_NAME};"
+        f"UID={DB_USER};"
+        f"PWD={DB_PASSWORD};"
+        f"TrustServerCertificate={'yes' if DB_TRUST_CERT.lower() == 'yes' else 'no'};"
+        f"Timeout=60;"
+    )
+    # URL-encode the entire connection string
+    params = urllib.parse.quote_plus(odbc_str)
+    return f"mssql+pyodbc:///?odbc_connect={params}"
 
-# DB_SERVER = os.getenv("DB_SERVER", "10.192.0.173\\SQLEXPRESS")
-CONNECTION_STRING = (
-    f"mssql+pyodbc://{DB_USER}:{DB_PASSWORD}@{DB_SERVER}/{DB_NAME}"
-    f"?driver={DB_DRIVER}"
-)
-logger.debug(f"Connection string: {CONNECTION_STRING}")
-logger.debug("Connection string created successfully")
+CONNECTION_STRING = create_connection_string()
+logger.debug(f"Connection string created successfully")
 
 # Create SQLAlchemy engine
 try:
-    engine = create_engine(CONNECTION_STRING, echo=False, future=True)
+    engine = create_engine(
+        CONNECTION_STRING,
+        echo=False,  # Set to True for debugging SQL queries
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=3600,
+    )
     logger.info("SQLAlchemy engine created successfully")
 except Exception as e:
     logger.error(f"Error creating engine: {e}")
     raise
 
 # Create session factory
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False
+)
 
 def health_check():
     """Verifies database connection by executing a simple query."""
@@ -82,14 +104,12 @@ def fetch_one(query: str, params: dict = None):
         row = result.fetchone()
         return dict(row._mapping) if row else None
 
-
 def fetch_all(query: str, params: dict = None):
     """Fetch all rows."""
     with engine.connect() as conn:
         result = conn.execute(text(query), params or {})
         rows = result.fetchall()
         return [dict(row._mapping) for row in rows]
-
 
 def execute_query(query: str, params: dict = None):
     """Execute insert/update/delete query and return affected row count."""

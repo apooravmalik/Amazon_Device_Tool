@@ -151,7 +151,7 @@ def check_and_manage_scheduled_states():
                 # inside the schedule, but last cycle it was not).
                 if is_inside_schedule and not was_in_schedule:
                     logger.info(f"[Building {building_id}]: ALARM! Schedule started but panel is still ARMED. Sending AXE message.")
-                    proserver_service.send_axe_message()
+                    proserver_service.send_armed_axe_message(building_id)
                 
                 # In all other "ARMED" cases (e.g., armed and outside schedule,
                 # or armed and already inside schedule), we do nothing.
