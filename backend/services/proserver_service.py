@@ -1,26 +1,30 @@
+# backend/services/proserver_service.py
 import socket
-from sqlalchemy import text
+import os
+import pyodbc
 from logger import get_logger
-
-# Import the connection helper and settings from config
-from config import get_db_connection, PROSERVER_IP, PROSERVER_PORT
+from contextlib import contextmanager
+from sqlalchemy import text
+from config import (PROSERVER_IP, PROSERVER_PORT,
+                    PROD_DB_CONNECTION_STRING, get_db_connection)
 
 logger = get_logger(__name__)
 
-# --- TCP/IP Functions (Unchanged) ---
+# --- TCP/IP Functions ---
 
 # def send_proserver_notification(building_name: str, device_id: int):
 #     """
 #     Sends a unified notification to the ProServer.
-#     Format: Axe,{building_name}@
+#     Format: Axe,{building_name}_{device_id}@
 #     """
-#     message = f"Axe,{building_name}_IsArmed@"
+#     message = f"Axe,{building_name}_{device_id}@"
 #     logger.info(f"Attempting to send notification to ProServer: {message}")
     
 #     try:
 #         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 #             s.connect((PROSERVER_IP, PROSERVER_PORT))
 #             s.sendall(message.encode())
+#             logger.info(f"Sent notification to ProServer for device {device_id} in {building_name}")
 #     except Exception as e:
 #         logger.error(f"Failed to send notification to ProServer: {e}")
 
@@ -38,51 +42,25 @@ logger = get_logger(__name__)
 #     except Exception as e:
 #         logger.error(f"Failed to send global armed notification to ProServer: {e}")
 
-# --- UPDATED: DATABASE FUNCTIONS USING SQLALCHEMY ---
-
-def send_armed_axe_message(building_id: int):
+# --- new function for sending disarmed alert ---
+def send_disarmed_alert(building_id: int):
     """
-    Checks if a specific building is in the 'AreaArmingStates.4' state.
-    If it is, fetches the building name and sends the dynamic armed message.
+    Sends the new alert format when a panel is DISARMED at the
+    scheduled alert time.
+    Format: axe,{building_id}_is_Disarmed@
     """
-    
-    # The new query you provided
-    sql = text("""
-        select bldBuildingName_TXT from Building_TBL 
-        join Device_TBL on dvcBuilding_FRK = Building_PRK 
-        where dvcCurrentState_TXT = 'AreaArmingStates.4' and dvcBuilding_FRK = :building_id
-    """)
-    
-    building_name = None
+    message = f"axe,{building_id}_is_Disarmed@"
+    logger.info(f"Sending DISARMED alert for building {building_id}: {message}")
     
     try:
-        # Use the SQLAlchemy connection to run the query
-        with get_db_connection() as db:
-            result = db.execute(sql, {"building_id": building_id})
-            row = result.fetchone() # We only expect one row
-            
-            if row:
-                # Use the column name from your query
-                building_name = row.bldBuildingName_TXT
-
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((PROSERVER_IP, PROSERVER_PORT))
+            s.sendall(message.encode())
+            logger.info(f"Sent disarmed alert for building {building_id}.")
     except Exception as e:
-        logger.error(f"Failed to query for building name for Axe message: {e}")
-        return # Don't proceed if DB query fails
+        logger.error(f"Failed to send disarmed alert for building {building_id}: {e}")
 
-    # Only send if the query returned a building name (i.e., state was 'AreaArmingStates.4')
-    if building_name:
-        # The new message format you specified
-        message = f"axe,{building_name}_Is_Armed@"
-        logger.info(f"Building {building_id} is 'AreaArmingStates.4'. Sending message: {message}")
-        
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((PROSERVER_IP, PROSERVER_PORT))
-                s.sendall(message.encode())
-        except Exception as e:
-            logger.error(f"Failed to send armed axe notification to ProServer: {e}")
-    else:
-        logger.info(f"Building {building_id} is not in 'AreaArmingStates.4'. No message sent.")
+# --- Database Functions ---
 
 def get_proevents_for_building_from_db(building_id: int) -> list[dict]:
     """
@@ -104,7 +82,6 @@ def get_proevents_for_building_from_db(building_id: int) -> list[dict]:
         WHERE
             p.pevBuilding_FRK = :building_id;
     """)
-    
     results = []
 
     try:
@@ -119,12 +96,10 @@ def get_proevents_for_building_from_db(building_id: int) -> list[dict]:
             for row in rows:
                 results.append({
                     "id": row.ProEvent_PRK,
-                    "state": row.pevReactive_FRK,  # This is the 0 or 1
+                    "state": row.pevReactive_FRK,
                     "name": row.pevAlias_TXT,
                     "building_name": row.bldBuildingName_TXT
                 })
-            
-            db.commit()
         
         logger.info(f"Successfully fetched {len(results)} device states from DB for building {building_id}")
         return results
@@ -167,7 +142,43 @@ def set_proevent_reactive_state_bulk(target_states: list[dict]) -> bool:
     except Exception as e:
         logger.error(f"Failed to bulk update states in ProServer DB: {e}")
         return False
+
+def get_all_distinct_buildings_from_db() -> list[dict]:
+    """
+    Fetches a list of all unique buildings from the Device_TBL.
+    """
+    logger.info("Connecting to ProServer DB to get distinct buildings...")
     
+    sql = text("""
+        SELECT DISTINCT dvcbuilding_FRK, dvcBuildingName_TXT
+        FROM Device_TBL
+        WHERE dvcBuildingName_TXT IS NOT NULL
+        ORDER BY dvcBuildingName_TXT
+    """)
+    results = []
+
+    try:
+        with get_db_connection() as db:
+            result = db.execute(sql)
+            rows = result.fetchall()
+            
+            if not rows:
+                logger.warning("No buildings found in Device_TBL.")
+                return []
+                
+            for row in rows:
+                results.append({
+                    "id": row.dvcbuilding_FRK,
+                    "name": row.dvcBuildingName_TXT
+                })
+        
+        logger.info(f"Successfully fetched {len(results)} distinct buildings.")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Failed to query ProServer DB for distinct buildings: {e}")
+        return []
+
 def get_all_live_building_arm_states() -> dict[int, bool]:
     """
     Fetches the arm/disarm state for all buildings that have an arming device.
@@ -175,7 +186,6 @@ def get_all_live_building_arm_states() -> dict[int, bool]:
     """
     logger.info("Connecting to ProServer DB to get all building arm states...")
     
-    # Use text() for the raw SQL
     sql = text("""
         SELECT dvcbuilding_FRK, dvcCurrentState_TXT 
         FROM Device_TBL 
@@ -185,9 +195,7 @@ def get_all_live_building_arm_states() -> dict[int, bool]:
     building_states = {}
 
     try:
-        # Use the new connection helper
         with get_db_connection() as db:
-            # Execute and fetch all results
             result = db.execute(sql)
             rows = result.fetchall()
             
@@ -196,7 +204,6 @@ def get_all_live_building_arm_states() -> dict[int, bool]:
                 return {}
                 
             for row in rows:
-                # Accessing SQLAlchemy rows
                 building_id = row.dvcbuilding_FRK
                 state_text = (row.dvcCurrentState_TXT or "").strip()
 
@@ -217,41 +224,3 @@ def get_all_live_building_arm_states() -> dict[int, bool]:
     except Exception as e:
         logger.error(f"Failed to query ProServer DB for building arm states: {e}")
         return {} # Return an empty dict on failure
-    
-def get_all_distinct_buildings_from_db() -> list[dict]:
-    """
-    Fetches a list of all unique buildings from the Device_TBL.
-    """
-    logger.info("Connecting to ProServer DB to get distinct buildings...")
-    
-    sql = text("""
-        select Building_PRK, bldBuildingName_TXT
-        from
-        Building_TBL
-    """)
-    
-    results = []
-
-    try:
-        with get_db_connection() as db:
-            result = db.execute(sql)
-            rows = result.fetchall()
-            
-            if not rows:
-                logger.warning("No buildings found in Device_TBL.")
-                return []
-                
-            for row in rows:
-                results.append({
-                    "id": row.Building_PRK,
-                    "name": row.bldBuildingName_TXT
-                })
-            
-            db.commit()
-        
-        logger.info(f"Successfully fetched {len(results)} distinct buildings.")
-        return results
-        
-    except Exception as e:
-        logger.error(f"Failed to query ProServer DB for distinct buildings: {e}")
-        return []
